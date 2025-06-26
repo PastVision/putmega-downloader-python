@@ -4,6 +4,7 @@ import os
 from sys import argv
 from tqdm import tqdm
 from math import ceil
+from urllib.parse import urljoin
 
 
 class PutMega:
@@ -22,10 +23,10 @@ class PutMega:
         links = [i['href'] for i in self.soup.find_all(
             'a', {'class': 'image-container --media'})]
         pages = ceil(int(self.soup.find(
-            'b', {'data-text': 'image-count'}).text)/len(links))
+            'span', {'data-text': 'image-count'}).text)/len(links))
         nexturl = self.soup.find('a', {'data-pagination': 'next'})['href']
         for _ in range(pages-1):
-            cont = requests.get(nexturl, headers=self.HEADER).content.decode()
+            cont = requests.get(urljoin(self.url, nexturl), headers=self.HEADER).content.decode()
             sp = BeautifulSoup(cont, 'html5lib')
             links += [i['href'] for i in sp.find_all(
                 'a', {'class': 'image-container --media'})]
@@ -41,12 +42,12 @@ class PutMega:
             self.__download(i)
 
     def __download(self, link: str):
-        cntnt = requests.get(link, headers=self.HEADER).content.decode()
+        cntnt = requests.get(urljoin(self.url, link), headers=self.HEADER).content.decode()
         soup = BeautifulSoup(cntnt, 'html5lib')
-        url = soup.find('a', {'class': 'btn btn-download default'})['href']
+        url = soup.find('a', {'class': 'btn-download'})['href']
         name = url.split('/')[-1]
         try:
-            img = requests.get(url, headers=self.HEADER)
+            img = requests.get(urljoin(self.url, url), headers=self.HEADER)
             with open(self.folder + '/' + name, 'wb') as f:
                 for chunk in img:
                     f.write(chunk)
